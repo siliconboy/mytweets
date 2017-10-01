@@ -17,7 +17,7 @@ import android.widget.TextView;
 import com.codepath.apps.simpletweets.R;
 import com.codepath.apps.simpletweets.activities.TimelineActivity;
 import com.codepath.apps.simpletweets.models.User;
-import com.codepath.apps.simpletweets.utils.GlideApp;
+import com.codepath.apps.simpletweets.helper.GlideApp;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -120,10 +120,10 @@ public class TweetFragment extends DialogFragment {
 
         //User usr = User.byId(mTweet.getUserId());
         tvName.setText(mUser.getName());
-        tvUserName.setText(mUser.getScreenName());
+        tvUserName.setText("@" + mUser.getScreenName());
         etTweet.setText(""); //clear content
-        GlideApp.with(getContext()).load(mUser.getProfileImageUrl()).fitCenter().override(75, 75).into(ivImage);
-        tvCount.setText("140");   //max limit
+        GlideApp.with(getContext()).load(mUser.getProfileImageUrl()).fitCenter().override(150, 150).into(ivImage);
+        tvCount.setText(String.valueOf(MAX_LIMIT));   //max limit
     }
 
     // When binding a fragment in onCreateView, set the views to null in onDestroyView.

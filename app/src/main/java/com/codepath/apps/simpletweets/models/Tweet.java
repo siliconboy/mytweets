@@ -29,17 +29,12 @@ public class Tweet extends BaseModel {
     Long id;
     @Column
     Long userId;
-//    @Column
-//    String userHandle;
 
     @Column
     String timestamp;
     @Column
     String body;
-    //public String body;
-//    public long uid;
-//    public User user;
-//    public String createdAt;
+
 
 
     public Long getId() {
@@ -84,8 +79,7 @@ public class Tweet extends BaseModel {
                 User user = User.fromJSON(object.getJSONObject("user"));
                 user.save();
             }
-            ;
-            //this.userHandle = object.getJSONObject("user").getString("screen_name");
+
             this.timestamp = object.getString("created_at");
             this.body = object.getString("text");
         } catch (JSONException e) {

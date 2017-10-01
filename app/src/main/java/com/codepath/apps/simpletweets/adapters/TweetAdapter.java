@@ -9,11 +9,12 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.request.RequestOptions;
 import com.codepath.apps.simpletweets.R;
 import com.codepath.apps.simpletweets.models.Tweet;
 import com.codepath.apps.simpletweets.models.User;
-import com.codepath.apps.simpletweets.utils.GlideApp;
-import com.codepath.apps.simpletweets.utils.MyUtils;
+import com.codepath.apps.simpletweets.helper.GlideApp;
+import com.codepath.apps.simpletweets.helper.MyUtils;
 
 import java.util.List;
 
@@ -45,13 +46,13 @@ public class TweetAdapter extends RecyclerView.Adapter<TweetAdapter.ViewHolder> 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         Tweet tweet = mTweets.get(position);
-        Log.d("DEBUG", "tweet uer id :" + tweet.getUserId());
-        Log.d("DEBUG", "id:" + tweet.getId());
+        Log.d("DEBUG", "adapter bind holder tweet id :" + tweet.getId());
         holder.tvBody.setText(tweet.getBody());
         User usr = User.byId(tweet.getUserId());
-        holder.tvUserName.setText(usr.getName() + "@" + usr.getScreenName());
+        holder.tvUserName.setText(usr.getName());
+        holder.tvHandle.setText("@" + usr.getScreenName());
         holder.tvTimeGap.setText(MyUtils.getRelativeTimeAgo(tweet.getTimestamp()));
-        GlideApp.with(context).load(usr.getProfileImageUrl()).override(75, 75).fitCenter().into(holder.ivProfileImage);
+        GlideApp.with(context).load(usr.getProfileImageUrl()).override(150, 150).fitCenter().apply(RequestOptions.circleCropTransform()).into(holder.ivProfileImage);
     }
 
     @Override
@@ -68,6 +69,8 @@ public class TweetAdapter extends RecyclerView.Adapter<TweetAdapter.ViewHolder> 
         TextView tvBody;
         @BindView(R.id.tvTimeGap)
         TextView tvTimeGap;
+        @BindView(R.id.tvHandle)
+        TextView tvHandle;
 
         public ViewHolder(View itemView) {
             super(itemView);

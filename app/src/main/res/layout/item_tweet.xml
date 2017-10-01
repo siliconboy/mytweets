@@ -18,18 +18,21 @@
         android:id="@+id/tvUserName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="TextView"
+        tools:text="name"
+        android:textColor="@android:color/black"
         android:layout_alignParentTop="true"
         android:layout_alignStart="@+id/tvBody" />
 
-    <TextView
+    <com.codepath.apps.simpletweets.helper.LinkifiedTextView
         android:id="@+id/tvBody"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="5dp"
+        android:autoLink="all"
+        android:linksClickable="true"
         android:layout_below="@+id/tvUserName"
         android:layout_toEndOf="@+id/ivProfileImage"
-        android:text="TextView" />
+        tools:text="tweet body" />
 
     <TextView
         android:id="@+id/tvTimeGap"
@@ -37,5 +40,16 @@
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_alignParentTop="true"
-        android:text="TextView" />
+        tools:text="timegap" />
+
+    <TextView
+        android:id="@+id/tvHandle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="2sp"
+        android:layout_alignParentTop="true"
+        android:layout_toEndOf="@+id/tvUserName"
+        tools:text="handle" />
+
+
 </RelativeLayout>

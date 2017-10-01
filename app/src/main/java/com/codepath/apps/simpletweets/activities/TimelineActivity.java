@@ -21,11 +21,11 @@ import com.codepath.apps.simpletweets.TwitterClient;
 import com.codepath.apps.simpletweets.adapters.EndlessRecyclerViewScrollListener;
 import com.codepath.apps.simpletweets.adapters.TweetAdapter;
 import com.codepath.apps.simpletweets.fragments.TweetFragment;
+import com.codepath.apps.simpletweets.helper.ItemClickSupport;
 import com.codepath.apps.simpletweets.interfaces.TweetDialogListener;
 import com.codepath.apps.simpletweets.models.Tweet;
 import com.codepath.apps.simpletweets.models.User;
 import com.codepath.apps.simpletweets.networks.NetworkUtils;
-import com.codepath.apps.simpletweets.utils.ItemClickSupport;
 import com.loopj.android.http.JsonHttpResponseHandler;
 
 import org.json.JSONArray;
@@ -68,6 +68,10 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
         //Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setLogo(R.drawable.ic_twitter);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
+        getSupportActionBar().setDisplayUseLogoEnabled(true);
 
         tweets = new ArrayList<>();
         adapter = new TweetAdapter(tweets);
@@ -76,22 +80,24 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
         if (NetworkUtils.isNetworkAvailable(this) || NetworkUtils.isOnline()) {
             Toast.makeText(this, "offline mode. Loading local data.", Toast.LENGTH_LONG).show();
             //     Snackbar.make(searchLayout, R.string.net_error, Snackbar.LENGTH_LONG).show();
-
             tweets.addAll(Tweet.recentItems());
+            Log.d("DEBUG", "local load count:" + tweets.size());
         }
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         rvTweets.setLayoutManager(linearLayoutManager);
 
         getCredential();
-
+        Log.d("DEBUG", "First network load before count:" + tweets.size());
         populateTimeline(1L, Long.MAX_VALUE - 1);
+
         // Retain an instance so that you can call `resetState()` for fresh searches
         scrollListener = new EndlessRecyclerViewScrollListener(linearLayoutManager) {
             @Override
             public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
                 // Triggered only when new data needs to be appended to the list
                 // Add whatever code is needed to append new items to the bottom of the list
+                Log.d("DEBUG", "network continue load before count:" + tweets.size());
                 loadNextDataFromApi(page, view);
             }
         };
@@ -113,10 +119,8 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
                     intent.putExtra("tweet", Parcels.wrap(tweet));
                     //launch activity
                     startActivity(intent);
-
                 }
         );
-
     }
 
     // Append the next page of data into the adapter
@@ -133,12 +137,10 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
         Handler handler = new Handler();
         // Define the code block to be executed
         Runnable runnableCode = () -> {
-            // load data using network api
-            //TODO:
-            //// 3. Reset endless scroll listener when performing a new search
+            // reset only with first load.
             //scrollListener.resetState();
+            Log.d("DEBUG", "before new load tweets size:" + curSize);
             populateTimeline(1L, tweets.get(curSize - 1).getId());
-
         };
         // Run the above code block on the main thread after 500 miliseconds
         handler.postDelayed(runnableCode, 500);
@@ -164,18 +166,21 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
 
             @Override
             public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                Toast.makeText(TimelineActivity.this, "Could not get profile, due to network error.", Toast.LENGTH_LONG).show();
                 Log.d("Twitter.client", errorResponse.toString());
                 throwable.printStackTrace();
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
+                Toast.makeText(TimelineActivity.this, "Could not get profile, due to network error.", Toast.LENGTH_LONG).show();
                 Log.d("Twitter.client", errorResponse.toString());
                 throwable.printStackTrace();
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                Toast.makeText(TimelineActivity.this, "Could not get profile, due to network error.", Toast.LENGTH_LONG).show();
                 Log.d("Twitter.client", responseString);
                 throwable.printStackTrace();
             }
@@ -199,18 +204,21 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
 
             @Override
             public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                Toast.makeText(TimelineActivity.this, "Could not load more tweet, due to network error.", Toast.LENGTH_LONG).show();
                 Log.d("Twitter.client", errorResponse.toString());
                 throwable.printStackTrace();
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
+                Toast.makeText(TimelineActivity.this, "Could not load more tweet, due to network error.", Toast.LENGTH_LONG).show();
                 Log.d("Twitter.client", errorResponse.toString());
                 throwable.printStackTrace();
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                Toast.makeText(TimelineActivity.this, "Could not load more tweet, due to network error.", Toast.LENGTH_LONG).show();
                 Log.d("Twitter.client", responseString);
                 throwable.printStackTrace();
             }
@@ -232,7 +240,6 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_add) {
             TweetFragment tweetFragment;
             FragmentManager fm = getSupportFragmentManager();
@@ -250,9 +257,9 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                 Tweet tweet = fromJson(response);
-                tweets.add(tweet);
+                tweets.add(0,tweet);
                 adapter.notifyItemInserted(tweets.size() - 1);
-                rvTweets.scrollToPosition(adapter.getItemCount() - 1);
+                rvTweets.scrollToPosition(0);
                 Log.d("Twitter.return", tweet.toString());
             }
 
@@ -264,18 +271,21 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
 
             @Override
             public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                Toast.makeText(TimelineActivity.this, "not able to post your tweet.", Toast.LENGTH_LONG).show();
                 Log.d("Twitter.client", errorResponse.toString());
                 throwable.printStackTrace();
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
+                Toast.makeText(TimelineActivity.this, "not able to post your tweet.", Toast.LENGTH_LONG).show();
                 Log.d("Twitter.client", errorResponse.toString());
                 throwable.printStackTrace();
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                Toast.makeText(TimelineActivity.this, "not able to post your tweet.", Toast.LENGTH_LONG).show();
                 Log.d("Twitter.client", responseString);
                 throwable.printStackTrace();
             }
