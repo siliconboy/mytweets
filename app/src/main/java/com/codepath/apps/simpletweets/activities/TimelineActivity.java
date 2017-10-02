@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
@@ -47,13 +48,20 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
     private TwitterClient client;
     TweetAdapter adapter;
     ArrayList<Tweet> tweets;
+
     @BindView(R.id.rvTweet)
     RecyclerView rvTweets;
+
+    @BindView(R.id.swipeContainer)
+    SwipeRefreshLayout swipeContainer;
+
     @BindView(R.id.toolbar)
     Toolbar toolbar;
+
     User mUser;
     Long mMaxId;
     Long mSinceId;
+    boolean hasLocal =false;
 
     private EndlessRecyclerViewScrollListener scrollListener;
 
@@ -68,10 +76,28 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
         //Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
+       // getSupportActionBar().setDisplayShowHomeEnabled(true);
         getSupportActionBar().setLogo(R.drawable.ic_twitter);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         getSupportActionBar().setDisplayUseLogoEnabled(true);
+
+        // Setup refresh listener which triggers new data loading
+        swipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                // Your code to refresh the list here.
+                // Make sure you call swipeContainer.setRefreshing(false)
+                // once the network request has completed successfully.
+                Log.d("DEBUG", "swipe refresh called");
+                populateTimeline(1L,Long.MAX_VALUE - 1);
+            }
+        });
+
+        // Configure the refreshing colors
+        swipeContainer.setColorSchemeResources(android.R.color.holo_blue_bright,
+                android.R.color.holo_green_light,
+                android.R.color.holo_orange_light,
+                android.R.color.holo_red_light);
 
         tweets = new ArrayList<>();
         adapter = new TweetAdapter(tweets);
@@ -80,7 +106,8 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
         if (NetworkUtils.isNetworkAvailable(this) || NetworkUtils.isOnline()) {
             Toast.makeText(this, "offline mode. Loading local data.", Toast.LENGTH_LONG).show();
             //     Snackbar.make(searchLayout, R.string.net_error, Snackbar.LENGTH_LONG).show();
-            tweets.addAll(Tweet.recentItems());
+            adapter.addAll(Tweet.recentItems());
+            hasLocal = true;
             Log.d("DEBUG", "local load count:" + tweets.size());
         }
 
@@ -89,7 +116,11 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
 
         getCredential();
         Log.d("DEBUG", "First network load before count:" + tweets.size());
-        populateTimeline(1L, Long.MAX_VALUE - 1);
+        if (hasLocal && NetworkUtils.isOnline()) {
+            adapter.clear();
+            hasLocal=false;
+            populateTimeline(1L, Long.MAX_VALUE - 1);
+        }
 
         // Retain an instance so that you can call `resetState()` for fresh searches
         scrollListener = new EndlessRecyclerViewScrollListener(linearLayoutManager) {
@@ -131,7 +162,7 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
         //  --> Deserialize and construct new model objects from the API response
         //  --> Append the new data objects to the existing set of items inside the array of items
         //  --> Notify the adapter of the new items made with `notifyItemRangeInserted()`
-        final int curSize = adapter.getItemCount();
+        final int curSize = tweets.size();// adapter.getItemCount();
 
         // Create the Handler object (on the main thread by default)
         Handler handler = new Handler();
@@ -140,7 +171,13 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
             // reset only with first load.
             //scrollListener.resetState();
             Log.d("DEBUG", "before new load tweets size:" + curSize);
-            populateTimeline(1L, tweets.get(curSize - 1).getId());
+            if(hasLocal) {
+                adapter.clear();
+                hasLocal =false;
+                populateTimeline(1L,Long.MAX_VALUE - 1);
+            }else {
+                populateTimeline(1L, tweets.get(curSize - 1).getId());
+            }
         };
         // Run the above code block on the main thread after 500 miliseconds
         handler.postDelayed(runnableCode, 500);
@@ -200,11 +237,16 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
             public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
                 tweets.addAll(fromJson(response));
                 adapter.notifyItemInserted(tweets.size() - 1);
+                // for swipe
+                Log.d("DEBUG", "swipt disable");
+              swipeContainer.setRefreshing(false);
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
                 Toast.makeText(TimelineActivity.this, "Could not load more tweet, due to network error.", Toast.LENGTH_LONG).show();
+                Log.d("DEBUG", "swipt disable-failure case");
+                swipeContainer.setRefreshing(false);
                 Log.d("Twitter.client", errorResponse.toString());
                 throwable.printStackTrace();
             }
@@ -212,6 +254,8 @@ public class TimelineActivity extends AppCompatActivity implements TweetDialogLi
             @Override
             public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
                 Toast.makeText(TimelineActivity.this, "Could not load more tweet, due to network error.", Toast.LENGTH_LONG).show();
+                Log.d("DEBUG", "swipt disable");
+                swipeContainer.setRefreshing(false);
                 Log.d("Twitter.client", errorResponse.toString());
                 throwable.printStackTrace();
             }
