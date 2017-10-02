@@ -49,7 +49,7 @@
         android:layout_gravity="bottom|right"
         android:layout_margin="16dp"
         app:layout_behavior="com.codepath.apps.simpletweets.helper.ScrollAwareFABBehavior"
-        app:srcCompat="@drawable/ic_create"
+        app:srcCompat="@drawable/ic_add_circle_outline"
         app:layout_anchor="@id/rvTweet"
         app:layout_anchorGravity="bottom|right|end" />
 </android.support.design.widget.CoordinatorLayout>
